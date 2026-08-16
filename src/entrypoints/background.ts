@@ -48,6 +48,7 @@ import {
   summarizeTabObservation,
   type TabObservationState,
 } from "../shared/requestObservation";
+import { applyPrivacySignalHeaders } from "../shared/privacySignals";
 import { applyRequestHeaderRestriction } from "../shared/requestRestriction";
 import {
   TabPageUrlCache,
@@ -443,21 +444,21 @@ export default defineBackground(() => {
 
     browser.webRequest.onBeforeSendHeaders.addListener(
       (details) => {
-        if (details.tabId < 0) {
+        if (details.tabId < 0 || !details.requestHeaders) {
           return undefined;
         }
 
         const state = tabObservations.get(details.tabId);
         const decision = getActiveRequestDecision(state, details.requestId);
-
-        if (!decision?.headerRestriction || !details.requestHeaders) {
-          return undefined;
-        }
-
-        const requestHeaders = applyRequestHeaderRestriction(
+        const withPrivacySignals = applyPrivacySignalHeaders(
           details.requestHeaders,
-          decision.headerRestriction,
         );
+        const requestHeaders = decision?.headerRestriction
+          ? applyRequestHeaderRestriction(
+              withPrivacySignals,
+              decision.headerRestriction,
+            )
+          : withPrivacySignals;
 
         return { requestHeaders };
       },
