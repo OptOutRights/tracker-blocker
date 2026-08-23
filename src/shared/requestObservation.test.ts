@@ -9,6 +9,7 @@ import {
   getActiveRequestAttempt,
   getActiveRequestDecision,
   formatPrivacySafePathHint,
+  isLikelyEssentialResource,
   mapRequestType,
   recordObservedRequest,
   recordRequestCompleted,
@@ -18,6 +19,7 @@ import {
   resetTabObservationState,
   summarizeHostRequestDetails,
   summarizeTabObservation,
+  type ObservedRequestRow,
 } from "./requestObservation";
 import type {
   RequestAction,
@@ -1253,5 +1255,47 @@ describe("request observation aggregation", () => {
       requestCounts: { total: 0, blocked: 0, restricted: 0, allowed: 0 },
       rows: [],
     });
+  });
+});
+
+describe("isLikelyEssentialResource", () => {
+  it("flags rows that served a stylesheet on the page", () => {
+    expect(
+      isLikelyEssentialResource({
+        requestTypes: ["stylesheet"],
+      } as Pick<ObservedRequestRow, "requestTypes">),
+    ).toBe(true);
+  });
+
+  it("flags rows that served a font on the page", () => {
+    expect(
+      isLikelyEssentialResource({
+        requestTypes: ["font"],
+      } as Pick<ObservedRequestRow, "requestTypes">),
+    ).toBe(true);
+  });
+
+  it("flags rows that served an essential type alongside other types", () => {
+    expect(
+      isLikelyEssentialResource({
+        requestTypes: ["script", "stylesheet", "xhr"],
+      } as Pick<ObservedRequestRow, "requestTypes">),
+    ).toBe(true);
+  });
+
+  it("does not flag rows serving only scripts or beacons", () => {
+    expect(
+      isLikelyEssentialResource({
+        requestTypes: ["script", "beacon", "xhr"],
+      } as Pick<ObservedRequestRow, "requestTypes">),
+    ).toBe(false);
+  });
+
+  it("does not flag rows with no observed request types", () => {
+    expect(
+      isLikelyEssentialResource({
+        requestTypes: [],
+      } as Pick<ObservedRequestRow, "requestTypes">),
+    ).toBe(false);
   });
 });

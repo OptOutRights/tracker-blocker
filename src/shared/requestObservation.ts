@@ -1111,6 +1111,17 @@ export function isUnknownRow(row: ObservedRequestRow): boolean {
   );
 }
 
+const ESSENTIAL_REQUEST_TYPES: ReadonlySet<RequestTypeCategory> = new Set([
+  "stylesheet",
+  "font",
+]);
+
+export function isLikelyEssentialResource(
+  row: Pick<ObservedRequestRow, "requestTypes">,
+): boolean {
+  return row.requestTypes.some((type) => ESSENTIAL_REQUEST_TYPES.has(type));
+}
+
 type CatalogFields = Pick<
   ObservedRequestRow,
   | "category"

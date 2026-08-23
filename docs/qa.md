@@ -40,6 +40,11 @@ behavior changes.
   cross-site navigation and tab closure.
 - Confirm pause always applies in another tab and remains removable.
 - Confirm global Allow and Block overrides retain their documented precedence.
+- On a host that served a stylesheet or font on the current page, choose a
+  global Block override and confirm a warning appears with Cancel and Block
+  anyway instead of applying immediately. Confirm Cancel leaves it unblocked
+  and Block anyway applies it. Confirm a script- or beacon-only host still
+  blocks immediately with no warning.
 - Confirm a supported EasyPrivacy block is canceled, an exception is allowed,
   and an explicitly matched first-party subresource follows the filter result.
 - Confirm an automatic EasyPrivacy `main_frame` match is not canceled, while an

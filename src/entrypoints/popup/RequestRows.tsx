@@ -1,9 +1,12 @@
+import { useEffect, useState } from "preact/hooks";
+
 import type { DomainOverrideAction } from "../../shared/requestDecisions";
-import type {
-  HostRequestDetails,
-  ObservedRequestRow,
-  RequestAttemptExplanation,
-  RequestRelationship,
+import {
+  isLikelyEssentialResource,
+  type HostRequestDetails,
+  type ObservedRequestRow,
+  type RequestAttemptExplanation,
+  type RequestRelationship,
 } from "../../shared/requestObservation";
 import type { RequestView } from "./PopupDashboard";
 
@@ -106,6 +109,28 @@ function RequestRow({
   );
   const canSetGlobalOverride = row.relationship === "third-party";
   const hasRuleControls = canSetSiteAllow || canSetGlobalOverride;
+  const isEssential = isLikelyEssentialResource(row);
+  const [pendingBlockConfirm, setPendingBlockConfirm] = useState(false);
+
+  useEffect(() => {
+    if (selectedOverride === "block") {
+      setPendingBlockConfirm(false);
+    }
+  }, [selectedOverride]);
+
+  function handleBlockRequest() {
+    if (isEssential && selectedOverride !== "block") {
+      setPendingBlockConfirm(true);
+      return;
+    }
+
+    void onSetDomainOverride(row.displayName, "block");
+  }
+
+  function confirmBlockAnyway() {
+    setPendingBlockConfirm(false);
+    void onSetDomainOverride(row.displayName, "block");
+  }
 
   return (
     <article class={requestRowClass(row)}>
@@ -180,36 +205,63 @@ function RequestRow({
                     Applies to this hostname wherever it appears. Refresh to
                     retry requests on this page.
                   </p>
-                  <div
-                    aria-label="Rule on every site"
-                    class="mt-2 grid grid-cols-3 overflow-hidden rounded-md border border-zinc-300 bg-white"
-                    role="group"
-                  >
-                    <OverrideButton
-                      isDisabled={areSettingsControlsDisabled}
-                      isSelected={selectedOverride === "auto"}
-                      label="Auto"
-                      onSelect={() =>
-                        void onSetDomainOverride(row.displayName, null)
-                      }
-                    />
-                    <OverrideButton
-                      isDisabled={areSettingsControlsDisabled}
-                      isSelected={selectedOverride === "block"}
-                      label="Block"
-                      onSelect={() =>
-                        void onSetDomainOverride(row.displayName, "block")
-                      }
-                    />
-                    <OverrideButton
-                      isDisabled={areSettingsControlsDisabled}
-                      isSelected={selectedOverride === "allow"}
-                      label="Allow"
-                      onSelect={() =>
-                        void onSetDomainOverride(row.displayName, "allow")
-                      }
-                    />
-                  </div>
+
+                  {pendingBlockConfirm ? (
+                    <div class="mt-2 rounded-md border border-[#d6c3a4] bg-[#fff8eb] p-3">
+                      <p class="text-xs leading-snug text-[#6b4d21]">
+                        {row.displayName} served this page's stylesheets or
+                        fonts. Blocking it may affect the page's appearance
+                        or functionality.
+                      </p>
+                      <div class="mt-2 grid grid-cols-2 gap-2">
+                        <button
+                          class="rounded-md border border-zinc-200 bg-white px-2 py-2 text-xs font-medium text-zinc-600 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          disabled={areSettingsControlsDisabled}
+                          type="button"
+                          onClick={() => setPendingBlockConfirm(false)}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          class="rounded-md border border-[#d6c3a4] bg-[#fff8eb] px-2 py-2 text-xs font-medium text-[#6b4d21] transition hover:bg-[#fdf0d5] disabled:cursor-not-allowed disabled:opacity-50"
+                          disabled={areSettingsControlsDisabled}
+                          type="button"
+                          onClick={confirmBlockAnyway}
+                        >
+                          Block anyway
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      aria-label="Rule on every site"
+                      class="mt-2 grid grid-cols-3 overflow-hidden rounded-md border border-zinc-300 bg-white"
+                      role="group"
+                    >
+                      <OverrideButton
+                        isDisabled={areSettingsControlsDisabled}
+                        isSelected={selectedOverride === "auto"}
+                        label="Auto"
+                        onSelect={() =>
+                          void onSetDomainOverride(row.displayName, null)
+                        }
+                      />
+                      <OverrideButton
+                        isDisabled={areSettingsControlsDisabled}
+                        isSelected={selectedOverride === "block"}
+                        label="Block"
+                        onSelect={handleBlockRequest}
+                      />
+                      <OverrideButton
+                        isDisabled={areSettingsControlsDisabled}
+                        isSelected={selectedOverride === "allow"}
+                        label="Allow"
+                        onSelect={() =>
+                          void onSetDomainOverride(row.displayName, "allow")
+                        }
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </section>
