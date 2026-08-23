@@ -1,12 +1,13 @@
 export default defineContentScript({
   matches: ["<all_urls>"],
+  allFrames: true,
   world: "MAIN",
   runAt: "document_start",
   main() {
     try {
       Object.defineProperty(navigator, "globalPrivacyControl", {
         value: true,
-        configurable: true,
+        configurable: false,
         enumerable: true,
       });
     } catch {

@@ -101,8 +101,16 @@ install path or a CI image).
   Do Not Track or Global Privacy Control setting.
 - On a content page, confirm `navigator.globalPrivacyControl` reads `true` in
   the page's own console, not just the extension's context.
+- On a page with a cross-origin iframe, confirm `navigator.globalPrivacyControl`
+  reads `true` inside the iframe's own console, not just the top frame.
+- Confirm a page script cannot override `navigator.globalPrivacyControl` back to
+  `false`/`undefined` after page load (redefining or deleting the property
+  should fail silently or throw, not succeed).
 - Confirm the signal headers are added even when a site is paused, and that a
   user Block or Allow override does not remove them.
+- Confirm `Sec-GPC` and `DNT` headers are present on requests with no
+  associated tab (`tabId` of `-1`), such as extension or service-worker
+  background fetches, not just requests tied to a visible tab.
 
 ## Known Limitations
 
@@ -126,3 +134,10 @@ install path or a CI image).
   Firefox setting; DNT in particular is widely ignored by sites and mainly kept
   for backward compatibility with older opt-out parsers. GPC carries legal weight
   in a growing set of US states; DNT does not.
+- `navigator.globalPrivacyControl` is set via a `MAIN`-world content script, so
+  it cannot reach dedicated/shared/service worker global scopes — the
+  WebExtension content script API has no injection point into workers. Worker
+  code that wants the signal must read it from `navigator` on the page that
+  spawned it before postMessage-ing it in, or rely on the `Sec-GPC` request
+  header instead, which is applied at the network layer and does cover worker
+  requests.

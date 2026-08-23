@@ -444,15 +444,20 @@ export default defineBackground(() => {
 
     browser.webRequest.onBeforeSendHeaders.addListener(
       (details) => {
-        if (details.tabId < 0 || !details.requestHeaders) {
+        if (!details.requestHeaders) {
           return undefined;
+        }
+
+        const withPrivacySignals = applyPrivacySignalHeaders(
+          details.requestHeaders,
+        );
+
+        if (details.tabId < 0) {
+          return { requestHeaders: withPrivacySignals };
         }
 
         const state = tabObservations.get(details.tabId);
         const decision = getActiveRequestDecision(state, details.requestId);
-        const withPrivacySignals = applyPrivacySignalHeaders(
-          details.requestHeaders,
-        );
         const requestHeaders = decision?.headerRestriction
           ? applyRequestHeaderRestriction(
               withPrivacySignals,
