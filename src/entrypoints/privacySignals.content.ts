@@ -1,6 +1,7 @@
 export default defineContentScript({
   matches: ["<all_urls>"],
   allFrames: true,
+  matchOriginAsFallback: true,
   world: "MAIN",
   runAt: "document_start",
   main() {

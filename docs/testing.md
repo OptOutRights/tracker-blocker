@@ -17,7 +17,31 @@ The unit suite covers domain classification, packaged catalog and filter-engine
 validation, rule precedence, immutable request evidence, redirect and page
 generation handling, storage schemas and migrations, startup races, bounded
 memory, enforcement-ledger concurrency and failure behavior, message contracts,
-settings-page loading and mutation transitions, and other UI state shaping.
+settings-page loading and mutation transitions, Global Privacy Control header
+normalization, and other UI state shaping.
+
+## Global Privacy Control
+
+Tracker Blocker sends `Sec-GPC: 1` on every observable HTTP request, including
+requests Firefox reports without a normal tab ID. It intentionally does **not**
+send the deprecated `DNT` header. The main-world content script also exposes
+`navigator.globalPrivacyControl === true` at `document_start` in every frame,
+including inherited-origin frames, and makes its own property non-configurable.
+
+The unit tests prove the header cannot be duplicated or downgraded and that the
+content-script registration has the required frame, origin-fallback, world, and
+timing settings. For a browser check, load a built extension with
+`npm run dev:firefox`, open a regular page plus an embedded cross-origin frame,
+and in each page's DevTools console verify:
+
+```js
+navigator.globalPrivacyControl
+```
+
+In the Network panel, a page request should carry `Sec-GPC: 1` and no `DNT`
+request header. The extension cannot inject JavaScript into a page's dedicated
+or shared worker global; the request-level GPC header remains the privacy
+signal for worker-originated network requests.
 
 ## EasyPrivacy Supply Chain
 
