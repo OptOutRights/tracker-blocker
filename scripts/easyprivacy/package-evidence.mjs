@@ -43,8 +43,8 @@ const ordinaryBuildEnv = { ...process.env };
 delete ordinaryBuildEnv.WXT_EASYPRIVACY_MATCHING;
 
 await run(
-  "npx",
-  ["wxt", "build", "-b", "firefox"],
+  process.execPath,
+  [path.join(ROOT, "node_modules/wxt/bin/wxt.mjs"), "build", "-b", "firefox"],
   ROOT,
   { ...ordinaryBuildEnv, TRACKERBLOCKER_QA_PACKAGE_BASELINE: "true" },
 );
@@ -54,8 +54,8 @@ await run(
   output,
 );
 await run(
-  "npm",
-  ["run", "zip:firefox"],
+  process.execPath,
+  [path.join(ROOT, "node_modules/wxt/bin/wxt.mjs"), "zip", "-b", "firefox"],
   ROOT,
   {
     ...ordinaryBuildEnv,
@@ -99,15 +99,20 @@ for (const required of [
   "filter-data/easyprivacy.engine",
   "filter-data/easyprivacy.metadata.json",
 ]) {
-  assert(firefoxContents.split("\n").includes(required), `Missing Firefox package entry ${required}.`);
+  assert(
+    firefoxContents.split(/\r?\n/).includes(required),
+    `Missing Firefox package entry ${required}.`,
+  );
 }
 assert.equal(
-  firefoxContents.split("\n").includes("filter-data/easyprivacy.capabilities.json"),
+  firefoxContents
+    .split(/\r?\n/)
+    .includes("filter-data/easyprivacy.capabilities.json"),
   false,
   "The generation-time capability report must not ship in the Firefox package.",
 );
 const sourceContents = await capture("unzip", ["-Z1", sources], ROOT);
-const sourceEntries = sourceContents.split("\n").filter(Boolean);
+const sourceEntries = sourceContents.split(/\r?\n/).filter(Boolean);
 const sourcePackageJson = JSON.parse(
   await capture("unzip", ["-p", sources, "package.json"], ROOT),
 );
@@ -433,7 +438,11 @@ async function sha256(file) {
 function run(command, args, cwd, env = process.env) {
   return new Promise((resolve, reject) => {
     import("node:child_process").then(({ spawn }) => {
-      const child = spawn(command, args, { cwd, env, stdio: "inherit" });
+      const child = spawn(command, args, {
+        cwd,
+        env,
+        stdio: "inherit",
+      });
       child.once("error", reject);
       child.once("exit", (code) =>
         code === 0 ? resolve() : reject(new Error(`${command} exited with ${code}.`)),
@@ -445,7 +454,10 @@ function run(command, args, cwd, env = process.env) {
 function capture(command, args, cwd) {
   return new Promise((resolve, reject) => {
     import("node:child_process").then(({ spawn }) => {
-      const child = spawn(command, args, { cwd, stdio: ["ignore", "pipe", "pipe"] });
+      const child = spawn(command, args, {
+        cwd,
+        stdio: ["ignore", "pipe", "pipe"],
+      });
       let stdout = "";
       let stderr = "";
       child.stdout.on("data", (chunk) => { stdout += chunk; });

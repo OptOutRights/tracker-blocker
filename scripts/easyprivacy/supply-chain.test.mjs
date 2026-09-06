@@ -122,18 +122,22 @@ describe("EasyPrivacy source supply chain", () => {
     const rebuilt = await buildEasyPrivacyOutputs(source, sourceManifest);
 
     expect(rebuilt.artifact.equals(artifact)).toBe(true);
-    expect(rebuilt.metadataText).toBe(metadata);
-    expect(rebuilt.capabilitiesText).toBe(capabilities);
+    expect(normalizeLineEndings(rebuilt.metadataText)).toBe(
+      normalizeLineEndings(metadata),
+    );
+    expect(normalizeLineEndings(rebuilt.capabilitiesText)).toBe(
+      normalizeLineEndings(capabilities),
+    );
   });
 
   it("keeps retained provenance at stable repository paths", () => {
-    expect(SOURCE_PATH.endsWith("vendor/easyprivacy/easyprivacy.txt")).toBe(true);
+    expect(normalizePath(SOURCE_PATH).endsWith("vendor/easyprivacy/easyprivacy.txt")).toBe(true);
     expect(
-      CAPABILITIES_PATH.endsWith(
+      normalizePath(CAPABILITIES_PATH).endsWith(
         "vendor/easyprivacy/easyprivacy.capabilities.json",
       ),
     ).toBe(true);
-    expect(SOURCE_MANIFEST_PATH.endsWith("vendor/easyprivacy/source.json")).toBe(
+    expect(normalizePath(SOURCE_MANIFEST_PATH).endsWith("vendor/easyprivacy/source.json")).toBe(
       true,
     );
   });
@@ -195,3 +199,11 @@ describe("EasyPrivacy source supply chain", () => {
     );
   });
 });
+
+function normalizeLineEndings(value) {
+  return value.replace(/\r\n/g, "\n");
+}
+
+function normalizePath(value) {
+  return value.replaceAll("\\", "/");
+}

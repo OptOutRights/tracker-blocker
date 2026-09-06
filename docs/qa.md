@@ -18,6 +18,15 @@ Run `npm run test:easyprivacy` when filter policy, request observation,
 recovery, storage, permissions, performance, packaging, or Firefox lifecycle
 behavior changes.
 
+Run `npm run test:ui` for popup/options UI changes. It drives a real
+Firefox build via Selenium/geckodriver with the packaged extension
+sideloaded, and needs local Firefox and geckodriver binaries. Set
+`GECKODRIVER_PATH` to the driver's absolute path; the harness deliberately
+does not download a browser driver while testing. Set `FIREFOX_BINARY` to
+point at a specific binary if the platform default in
+`scripts/ui-harness/lib.mjs` doesn't find one (e.g. a non-standard
+install path or a CI image).
+
 ## Browser Checklist
 
 - Confirm a quiet first-party page produces a useful empty or near-empty state.
@@ -90,8 +99,18 @@ behavior changes.
 
 ## Known Limitations
 
-- There is no committed Playwright UI harness. UI verification uses Vitest,
-  WXT builds, `web-ext` validation, real-Firefox fixtures, and manual checks.
+- UI verification uses Vitest, WXT builds, `web-ext` validation, a
+  Selenium-based real-Firefox harness (`npm run test:ui`), and manual
+  checks. Selenium was chosen over Playwright for the browser harness
+  because Playwright's Firefox support runs a patched build with limited
+  WebExtension internals, whereas Selenium's `driver.installAddon()`
+  sideloads the packaged extension into an unmodified Firefox — the same
+  install path real users get, including `moz-extension://` and
+  `browser.*` behavior.
+- The UI harness resolves a Firefox binary from `FIREFOX_BINARY`, then a
+  short list of per-OS default install paths, then falls back to `firefox`
+  on `PATH`. It resolves geckodriver only from `GECKODRIVER_PATH` so a missing
+  or unpinned driver cannot cause an implicit network download.
 - The packaged catalog is intentionally conservative; broad mixed-use product
   domains remain out of its default block rules.
 - Top-level navigations reset tab evidence and are not shown as request rows.

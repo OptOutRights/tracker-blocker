@@ -14,7 +14,13 @@ const OUTPUT = path.join(HARNESS, ".output/firefox-mv3");
 const FIREFOX_BINARY = process.env.FIREFOX_BINARY ?? "/Applications/Firefox.app/Contents/MacOS/firefox";
 async function main() {
 await access(FIREFOX_BINARY);
-await runCommand("npx", ["wxt", "build", HARNESS, "-b", "firefox"]);
+await runCommand(process.execPath, [
+  path.join(ROOT, "node_modules/wxt/bin/wxt.mjs"),
+  "build",
+  HARNESS,
+  "-b",
+  "firefox",
+]);
 const controlServer = await startControlServer();
 const controlUrl = `http://127.0.0.1:${controlServer.address().port}/`;
 
@@ -148,7 +154,11 @@ function startControlServer() {
 }
 function runCommand(command, args) {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { cwd: ROOT, env: process.env, stdio: "inherit" });
+    const child = spawn(command, args, {
+      cwd: ROOT,
+      env: process.env,
+      stdio: "inherit",
+    });
     child.once("error", reject);
     child.once("exit", (code) => code === 0 ? resolve() : reject(new Error(`${command} exited with ${code}.`)));
   });
