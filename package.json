@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:ui:popup": "npm run build:firefox && node scripts/ui-harness/popup.test.mjs",
+    "test:firefox:gpc": "npm run build:firefox && node scripts/ui-harness/privacy-signals.mjs",
     "test:ui:options": "npm run build:firefox && node scripts/ui-harness/options.test.mjs",
     "test:ui:options:degraded": "npm run build:firefox && node scripts/ui-harness/options-degraded.mjs",
     "test:ui": "npm run test:ui:popup && npm run test:ui:options && npm run test:ui:options:degraded",

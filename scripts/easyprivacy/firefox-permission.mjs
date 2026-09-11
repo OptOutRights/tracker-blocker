@@ -19,6 +19,9 @@ try {
   const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
   assert.deepEqual(manifest.host_permissions, ["<all_urls>"]);
   manifest.host_permissions = [];
+  // Content-script match patterns also grant site access in Firefox. Remove
+  // those registrations from this temporary no-site-access fixture as well.
+  delete manifest.content_scripts;
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   process.exitCode = await runIntegration();
 } finally {
