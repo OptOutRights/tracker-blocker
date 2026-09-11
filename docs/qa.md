@@ -130,8 +130,9 @@ install path or a CI image).
   domains remain out of its default block rules.
 - Top-level navigations reset tab evidence and are not shown as request rows.
 - Automatic EasyPrivacy `main_frame` enforcement is a separate future project.
-- GPC is sent on every request regardless of the browser's own Firefox setting.
-  DNT is intentionally not sent.
+- GPC is added to observable requests regardless of Firefox's own GPC setting.
+  Browser-protected requests are outside the extension's access. The extension
+  does not add DNT or remove DNT headers supplied by the browser.
 - `navigator.globalPrivacyControl` is set via a `MAIN`-world content script, so
   it cannot reach dedicated/shared/service worker global scopes — the
   WebExtension content script API has no injection point into workers. Worker

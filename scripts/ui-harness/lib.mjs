@@ -62,10 +62,13 @@ export function resolveGeckoDriverPath() {
   return driverPath;
 }
 
-export async function launchWithExtension({ headless = true } = {}) {
+export async function launchWithExtension({ headless = true, preferences = {} } = {}) {
   await verifyBuild();
 
   const options = new firefox.Options();
+  for (const [name, value] of Object.entries(preferences)) {
+    options.setPreference(name, value);
+  }
   options.setBinary(resolveFirefoxBinary());
   if (headless) {
     options.addArguments("-headless");

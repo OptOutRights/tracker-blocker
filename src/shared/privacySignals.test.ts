@@ -6,6 +6,12 @@ import {
 } from "./privacySignals";
 
 describe("privacy signal headers", () => {
+  it("preserves a browser-supplied DNT preference without adding its own", () => {
+    expect(applyPrivacySignalHeaders([{ name: "DNT", value: "1" }])).toEqual([
+      { name: "DNT", value: "1" },
+      { name: GPC_HEADER_NAME, value: "1" },
+    ]);
+  });
   it("adds a GPC header to a request with no existing signal headers", () => {
     const result = applyPrivacySignalHeaders([
       { name: "Accept", value: "application/json" },

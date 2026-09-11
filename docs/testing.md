@@ -24,7 +24,8 @@ normalization, and other UI state shaping.
 
 Tracker Blocker sends `Sec-GPC: 1` on every observable HTTP request, including
 requests Firefox reports without a normal tab ID. It intentionally does **not**
-send the deprecated `DNT` header. The main-world content script also exposes
+add the `DNT` header or remove one supplied by the browser. The main-world
+content script also exposes
 `navigator.globalPrivacyControl === true` at `document_start` in every frame,
 including inherited-origin frames, and makes its own property non-configurable.
 
@@ -38,8 +39,16 @@ and in each page's DevTools console verify:
 navigator.globalPrivacyControl
 ```
 
-In the Network panel, a page request should carry `Sec-GPC: 1` and no `DNT`
-request header. The extension cannot inject JavaScript into a page's dedicated
+Run `npm run test:firefox:gpc` with `GECKODRIVER_PATH` set to a local driver
+binary for an automated loopback-only Firefox check. It disables Firefox's
+native GPC and DNT settings to verify the extension itself, checking early page
+scripts, cross-origin and inherited-origin frames, override protection, worker
+requests, paused sites, and background requests with an observed `tabId = -1`
+under normal, Allow, and Block settings.
+
+In the Network panel, a page request should carry `Sec-GPC: 1`. With native DNT
+disabled, it should carry no `DNT` header. The extension cannot inject
+JavaScript into a page's dedicated
 or shared worker global; the request-level GPC header remains the privacy
 signal for worker-originated network requests.
 
