@@ -1,2 +1,4 @@
 vendor/easyprivacy/easyprivacy.txt text eol=lf -whitespace
 public/filter-data/*.engine binary
+public/filter-data/easyprivacy.metadata.json text eol=lf
+vendor/easyprivacy/easyprivacy.capabilities.json text eol=lf

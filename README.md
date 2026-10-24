@@ -29,6 +29,9 @@ against `.output/firefox-mv3` without watching for changes.
 
 ## AMO reviewer build
 
+For the GitHub Actions dry-run and AMO submission procedure, see
+[Firefox release automation](docs/firefox-release.md).
+
 Tracker Blocker uses WXT, Vite, TypeScript, Preact, and Tailwind CSS, so every
 AMO submission includes the matching source archive and this build procedure.
 Mozilla's [default reviewer environment][amo-source] was last checked on

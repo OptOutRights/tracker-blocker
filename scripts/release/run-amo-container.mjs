@@ -74,6 +74,7 @@ try {
         "npm run verify:amo -- --rehearsal --evidence-dir /evidence",
       ].join(" && ")
     : [
+        "git config --global --add safe.directory /input/repository",
         "git clone --quiet --no-local /input/repository /work/trackerblocker",
         "cd /work/trackerblocker",
         `test "$(git rev-parse HEAD)" = "${input.revision}"`,

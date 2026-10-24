@@ -1,0 +1,105 @@
+name: Firefox release
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/firefox-release.yml'
+      - 'scripts/release/**'
+      - 'src/**'
+      - 'public/**'
+      - 'vendor/**'
+      - 'package*.json'
+      - 'wxt.config.ts'
+      - '.gitattributes'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version, for example 0.1.1 (must exceed package.json)'
+        required: true
+        type: string
+      publish:
+        description: 'Submit the verified release to the public AMO listing'
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firefox-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.14.0'
+          cache: npm
+      - run: npm install --global npm@11.9.0
+      - name: Prepare version in the runner checkout
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          node scripts/release/check-version.mjs "$RELEASE_VERSION"
+          npm version "$RELEASE_VERSION" --no-git-tag-version --ignore-scripts
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -am "Prepare Firefox $RELEASE_VERSION"
+      - run: npm ci --no-audit --no-fund
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run verify:easyprivacy
+      - name: Build and verify source reproducibility in the reviewer container
+        run: npm run verify:amo:container
+      - name: Unpack the verified extension for validation
+        run: |
+          mkdir -p .output/verified-extension
+          archive=$(find .output/amo-evidence -name '*-firefox.zip' -type f)
+          test -n "$archive"
+          unzip -q "$archive" -d .output/verified-extension
+          node node_modules/web-ext/bin/web-ext.js lint --no-config-discovery --source-dir .output/verified-extension
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firefox-release-evidence
+          path: .output/amo-evidence/
+          if-no-files-found: error
+          retention-days: 30
+
+  submit:
+    needs: verify
+    if: github.event_name == 'workflow_dispatch' && inputs.publish && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: firefox-release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.14.0'
+          cache: npm
+      - run: npm install --global npm@11.9.0
+      - run: npm ci --no-audit --no-fund
+      - uses: actions/download-artifact@v4
+        with:
+          name: firefox-release-evidence
+          path: release-evidence
+      - name: Submit the verified package and matching source
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: |
+          test -n "$WEB_EXT_API_KEY" || { echo 'Missing AMO_JWT_ISSUER'; exit 1; }
+          test -n "$WEB_EXT_API_SECRET" || { echo 'Missing AMO_JWT_SECRET'; exit 1; }
+          archive=$(find release-evidence -name '*-firefox.zip' -type f)
+          source=$(find release-evidence -name '*-sources.zip' -type f)
+          test -n "$archive" && test -n "$source"
+          mkdir verified-extension
+          unzip -q "$archive" -d verified-extension
+          node node_modules/web-ext/bin/web-ext.js sign --no-config-discovery --source-dir verified-extension --channel listed --upload-source-code "$source" --approval-timeout 0
