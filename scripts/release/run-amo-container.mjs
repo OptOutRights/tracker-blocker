@@ -40,6 +40,14 @@ assert(
   `Docker must use a native ARM64 Linux engine; received ${dockerArchitecture}.`,
 );
 
+const dockerCpuCount = Number((
+  await capture("docker", ["info", "--format", "{{.NCPU}}"], ROOT)
+).trim());
+assert(Number.isInteger(dockerCpuCount) && dockerCpuCount > 0,
+  "Docker must report a positive CPU count.");
+const containerCpuCount = Math.min(6, dockerCpuCount);
+process.stdout.write(`Reviewer container CPU limit: ${containerCpuCount}\n`);
+
 await mkdir(EVIDENCE_DIRECTORY, { recursive: true });
 const temporaryDirectory = await mkdtemp(
   path.join(os.tmpdir(), "trackerblocker-amo-container-"),
@@ -90,7 +98,7 @@ try {
       "--platform",
       "linux/arm64",
       "--cpus",
-      "6",
+      String(containerCpuCount),
       "--volume",
       `${input.path}:${input.containerPath}:ro`,
       "--volume",
