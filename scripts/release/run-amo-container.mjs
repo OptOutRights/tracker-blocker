@@ -83,6 +83,7 @@ try {
       ].join(" && ")
     : [
         "git config --global --add safe.directory /input/repository",
+        "git config --global --add safe.directory /input/repository/.git",
         "git clone --quiet --no-local /input/repository /work/trackerblocker",
         "cd /work/trackerblocker",
         `test "$(git rev-parse HEAD)" = "${input.revision}"`,
