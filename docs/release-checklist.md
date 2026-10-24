@@ -1,7 +1,9 @@
 # Next Firefox update: preparation checklist
 
-Status on October 24, 2026: local preparation only. No new branch was pushed,
-no release PR was opened, and no extension was submitted to AMO.
+Status on October 24, 2026: draft PR #15 is open against the #13 branch.
+GitHub packaging verification passed at commit 4e43e10. Version-bump preview
+coverage was added afterward; check the latest run before requesting review.
+No extension was submitted to AMO.
 
 ## Already verified
 
@@ -20,6 +22,9 @@ no release PR was opened, and no extension was submitted to AMO.
   private key, environment, dependency, and Git directories in the source ZIP.
 - [x] GitHub secret names match AMO_JWT_ISSUER and AMO_JWT_SECRET.
   Secret values were not accessed.
+- [x] GitHub ARM64 container rebuild, packaging, validation and artifact upload
+  passed at commit 4e43e10. Publication was skipped.
+- [x] Public AMO listing reports version 0.1.0 and the expected extension ID.
 
 These results have different scopes: the existing Firefox tests establish
 GPC behavior; they do not prove the new GitHub workflow or AMO upload works.
@@ -36,11 +41,11 @@ Archive checks do not replace a complete manual secret/content review.
 - [ ] Decide whether to complete automation for this update or release
   manually. Automation is not a technical prerequisite for updating AMO.
 - [ ] Rebase the release work onto merged main and review the final diff.
-- [ ] Before using automation, open its separate PR when ready and run the
-  ARM64 Docker/source-rebuild job on GitHub. It has not run locally because
-  Docker is unavailable. Do not describe the workflow as release-ready yet.
+- [ ] Confirm the latest PR-preview run passes the version bump and checks
+  that the packaged manifest contains the preview version.
 - [ ] Confirm the firefox-release environment settings. The YAML names the
   environment but does not itself create required reviewers or protections.
+  The environment API returned HTTP 404 in this audit (missing or inaccessible).
 - [ ] Re-run release checks against the agreed final version and commit,
   including applicable Firefox minimum-version/integration checks and manual
   representative-site checks in docs/qa.md.
@@ -49,7 +54,18 @@ Archive checks do not replace a complete manual secret/content review.
 - [ ] Submit only after maintainer authorization, then check AMO status.
   A successful API submission does not mean Mozilla has published it.
 
-## Workflow limitations to keep visible in review
+## Errors already fixed
+
+- Clean npm ci rejected incomplete optional-dependency lock entries: repaired
+  the lockfile, then confirmed clean installs locally and on GitHub.
+- Windows checked out generated JSON with CRLF, breaking exact-byte checks:
+  added LF attributes for those reports.
+- First GitHub run: Docker rejected a six-CPU limit on its four-CPU host:
+  container limit now uses the smaller of six and Docker's CPU count.
+- Next run: Git rejected the runner-owned mounted input repository:
+  trust only its two exact paths inside the temporary container.
+
+## Remaining workflow limitations
 
 - The version bump currently exists only in the runner checkout. It does not
   update main, create a version tag, or create a GitHub release. The source

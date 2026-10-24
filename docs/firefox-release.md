@@ -4,13 +4,21 @@ Local validation on October 24, 2026: clean installation with npm 11.9.0
 passed after repairing optional-dependency lockfile entries; 229 tests,
 TypeScript, Firefox build, and EasyPrivacy byte-identical verification passed.
 Workflow YAML and actionlint 1.7.12 checks passed. Generated JSON files now
-explicitly retain LF endings on Windows. The ARM64 Docker job and AMO submission have not been
-executed locally; no Docker executable is installed in this environment.
-GitHub Actions execution and secret-name/listing confirmation remain required
-before calling the workflow release-ready.
+explicitly retain LF endings on Windows. The GitHub ARM64 run at commit
+4e43e10 passed the container rebuild, packaging, extension validation, and
+artifact upload. Its submission job was skipped. The subsequent PR-preview
+change exercises the version bump as well; consult the latest PR check for
+its result. No AMO submission has been tested.
 
-The Firefox release workflow validates pull requests that change the release
-tooling. Manual dispatch builds a selected stable version; publication defaults
+The public AMO API reports version 0.1.0 and the expected extension ID.
+GitHub repository secret names match the workflow. Reading the named release
+environment returned HTTP 404; confirm its existence/access and protections
+before publication. No environment settings or secret values were changed.
+
+The Firefox release workflow validates pull requests that change relevant code
+or release tooling. PRs temporarily bump the patch version to exercise the
+versioned package path; this preview is not a release decision. Manual dispatch
+builds a selected stable version; publication defaults
 to off. The version is bumped and committed only inside the runner checkout,
 so the reproducibility evidence records a clean release commit. It does not
 push that commit, create a tag, or change main's package version. Retain the
