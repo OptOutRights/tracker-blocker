@@ -70,6 +70,11 @@ Archive checks do not replace a complete manual secret/content review.
 
 ## Remaining workflow limitations
 
+- Package selection now verifies the evidence and both ZIP checksums in
+  verification and submission jobs. Unit tests cover changed/missing files,
+  wrong version/revision, duplicate reports, and rehearsal/invalid evidence.
+  This validates local selection behavior, not Mozilla API acceptance.
+
 - Real release versions must be saved in the repository through the
   preparation command and code review. Only practice builds use a temporary
   version. Creating version tags or GitHub releases is not automated.

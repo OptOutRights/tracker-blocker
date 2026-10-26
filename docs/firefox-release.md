@@ -62,7 +62,13 @@ files byte-for-byte using the existing reviewer environment contract.
 After a successful dry run and maintainer authorization, dispatch from main
 with the agreed version and publish checked. Submission downloads that run's
 verified archives and uploads the matching source to AMO. It does not rebuild
-the extension in the credentials-bearing job. AMO review/publication may be
+the extension in the credentials-bearing job. Before extraction, both ZIPs
+are selected from exactly one final evidence report. The project, version,
+clean Git revision, source-rebuild result, file sizes, and SHA-256 checksums
+must match. These checks also run before artifact upload in the verification
+job. Missing, changed, mismatched, or ambiguous packages stop the workflow.
+The web-ext signing command repackages the extracted verified files for upload;
+it does not compile the source again. AMO review/publication may be
 asynchronous: workflow success means submitted, not necessarily publicly live.
 Check the AMO developer dashboard before retrying an ambiguous submission;
 do not blindly submit the same version twice.

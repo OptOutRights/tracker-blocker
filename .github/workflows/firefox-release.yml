@@ -59,12 +59,15 @@ jobs:
       - run: npm run verify:easyprivacy
       - name: Build and verify source reproducibility in the reviewer container
         run: npm run verify:amo:container
+      - name: Verify the archive pair against build evidence
+        id: packages
+        run: node scripts/release/select-evidence.mjs .output/amo-evidence "$RELEASE_VERSION" "$(git rev-parse HEAD)"
       - name: Unpack the verified extension for validation
+        env:
+          EXTENSION_ARCHIVE: ${{ steps.packages.outputs.extension }}
         run: |
           mkdir -p .output/verified-extension
-          archive=$(find .output/amo-evidence -name '*-firefox.zip' -type f)
-          test -n "$archive"
-          unzip -q "$archive" -d .output/verified-extension
+          unzip -q "$EXTENSION_ARCHIVE" -d .output/verified-extension
           node --input-type=module -e "import assert from 'node:assert/strict'; import fs from 'node:fs'; const manifest=JSON.parse(fs.readFileSync('.output/verified-extension/manifest.json')); assert.equal(manifest.version, process.env.RELEASE_VERSION); console.log('Verified packaged version:', manifest.version);"
           node node_modules/web-ext/bin/web-ext.js lint --no-config-discovery --source-dir .output/verified-extension
       - uses: actions/upload-artifact@v4
@@ -94,16 +97,20 @@ jobs:
         with:
           name: firefox-release-evidence
           path: release-evidence
+      - name: Verify downloaded packages before submission
+        id: packages
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: node scripts/release/select-evidence.mjs release-evidence "$RELEASE_VERSION" "$GITHUB_SHA"
       - name: Submit the verified package and matching source
         env:
+          EXTENSION_ARCHIVE: ${{ steps.packages.outputs.extension }}
+          SOURCE_ARCHIVE: ${{ steps.packages.outputs.source }}
           WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
           WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
         run: |
           test -n "$WEB_EXT_API_KEY" || { echo 'Missing AMO_JWT_ISSUER'; exit 1; }
           test -n "$WEB_EXT_API_SECRET" || { echo 'Missing AMO_JWT_SECRET'; exit 1; }
-          archive=$(find release-evidence -name '*-firefox.zip' -type f)
-          source=$(find release-evidence -name '*-sources.zip' -type f)
-          test -n "$archive" && test -n "$source"
           mkdir verified-extension
-          unzip -q "$archive" -d verified-extension
-          node node_modules/web-ext/bin/web-ext.js sign --no-config-discovery --source-dir verified-extension --channel listed --upload-source-code "$source" --approval-timeout 0
+          unzip -q "$EXTENSION_ARCHIVE" -d verified-extension
+          node node_modules/web-ext/bin/web-ext.js sign --no-config-discovery --source-dir verified-extension --channel listed --upload-source-code "$SOURCE_ARCHIVE" --approval-timeout 0
