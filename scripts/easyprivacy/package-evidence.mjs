@@ -84,18 +84,20 @@ assert.deepEqual(manifest.permissions, [
   "webRequestBlocking",
 ]);
 assert.deepEqual(manifest.host_permissions, ["<all_urls>"]);
-assert.equal("content_scripts" in manifest, false);
+assertGpcContentScript(manifest, "Generated manifest");
 assertReleaseIdentity(manifest, "Generated manifest");
 
 const packagedManifest = JSON.parse(
   await capture("unzip", ["-p", archive, "manifest.json"], ROOT),
 );
+assertGpcContentScript(packagedManifest, "Packaged manifest");
 assertReleaseIdentity(packagedManifest, "Packaged manifest");
 
 const firefoxContents = await capture("unzip", ["-Z1", archive], ROOT);
 for (const required of [
   "LICENSE",
   "THIRD-PARTY-NOTICES.txt",
+  "content-scripts/privacySignals.js",
   "filter-data/easyprivacy.engine",
   "filter-data/easyprivacy.metadata.json",
 ]) {
@@ -390,7 +392,20 @@ process.stdout.write(
 process.stdout.write(
   "Packaged GPL text matches the repository; Outfit font bytes match the official package; no local or private production dependency sources.\n",
 );
-process.stdout.write("Manifest permissions match the reviewed minimal set; no content scripts; package/source contents and private-build exclusions inspected.\n");
+process.stdout.write("Manifest permissions and the reviewed GPC content script match the approved configuration; package/source contents and private-build exclusions inspected.\n");
+
+function assertGpcContentScript(candidate, label) {
+  assert.deepEqual(candidate.content_scripts, [
+    {
+      matches: ["<all_urls>"],
+      all_frames: true,
+      run_at: "document_start",
+      js: ["content-scripts/privacySignals.js"],
+      match_origin_as_fallback: true,
+      world: "MAIN",
+    },
+  ], `${label} must contain exactly the reviewed GPC content script.`);
+}
 
 function assertReleaseIdentity(candidate, label) {
   assert.equal(

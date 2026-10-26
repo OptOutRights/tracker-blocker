@@ -96,6 +96,21 @@ install path or a CI image).
   sites in a fresh profile. Compare any suspected regression with EasyPrivacy
   disabled, avoid credentials or transactions, and record only the task outcome
   and aggregate counts needed to diagnose it.
+- On a first-party and a third-party request, inspect the outgoing headers and
+  confirm `Sec-GPC: 1` is present regardless of the site's own Global Privacy
+  Control setting.
+- On a content page, confirm `navigator.globalPrivacyControl` reads `true` in
+  the page's own console, not just the extension's context.
+- On a page with a cross-origin iframe, confirm `navigator.globalPrivacyControl`
+  reads `true` inside the iframe's own console, not just the top frame.
+- Confirm a page script cannot override `navigator.globalPrivacyControl` back to
+  `false`/`undefined` after page load (redefining or deleting the property
+  should fail silently or throw, not succeed).
+- Confirm the signal headers are added even when a site is paused, and that a
+  user Block or Allow override does not remove them.
+- Confirm `Sec-GPC` is present on requests with no associated tab (`tabId` of
+  `-1`), such as extension or service-worker background fetches, not just
+  requests tied to a visible tab.
 
 ## Known Limitations
 
@@ -115,3 +130,13 @@ install path or a CI image).
   domains remain out of its default block rules.
 - Top-level navigations reset tab evidence and are not shown as request rows.
 - Automatic EasyPrivacy `main_frame` enforcement is a separate future project.
+- GPC is added to observable requests regardless of Firefox's own GPC setting.
+  Browser-protected requests are outside the extension's access. The extension
+  does not add DNT or remove DNT headers supplied by the browser.
+- `navigator.globalPrivacyControl` is set via a `MAIN`-world content script, so
+  it cannot reach dedicated/shared/service worker global scopes — the
+  WebExtension content script API has no injection point into workers. Worker
+  code that wants the signal must read it from `navigator` on the page that
+  spawned it before postMessage-ing it in, or rely on the `Sec-GPC` request
+  header instead, which is applied at the network layer and does cover worker
+  requests.
