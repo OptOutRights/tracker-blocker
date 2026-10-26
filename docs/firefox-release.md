@@ -18,11 +18,10 @@ before publication. No environment settings or secret values were changed.
 The Firefox release workflow validates pull requests that change relevant code
 or release tooling. PRs temporarily bump the patch version to exercise the
 versioned package path; this preview is not a release decision. Manual dispatch
-builds a selected stable version; publication defaults
-to off. The version is bumped and committed only inside the runner checkout,
-so the reproducibility evidence records a clean release commit. It does not
-push that commit, create a tag, or change main's package version. Retain the
-source archive and evidence as the record of exactly what was submitted.
+builds the stable version already saved in the selected commit; publication
+defaults to off. The requested version must match both package files. Only
+PR previews bump the version in the runner checkout. Retain the source archive
+and evidence as the record of exactly what was submitted.
 
 ## Before enabling publication
 
@@ -42,6 +41,18 @@ the environment itself.
 
 ## Dry run and submission
 
+First prepare the agreed version on a release-preparation branch:
+
+```sh
+npm run release:prepare -- 0.1.1
+```
+
+This changes package.json and both root version fields in package-lock.json
+without changing dependencies. Review and commit those two files, then merge
+the version change through the normal PR process. The example is not approval
+to select 0.1.1. Real releases build a committed version rather than creating
+an unpublished runner-only version commit.
+
 Run Firefox release from Actions with version 0.1.1 and publish unchecked.
 Inspect the unit/type/filter checks, extension validation, and uploaded
 firefox-release-evidence artifact. The container builds the extension and
@@ -56,8 +67,9 @@ asynchronous: workflow success means submitted, not necessarily publicly live.
 Check the AMO developer dashboard before retrying an ambiguous submission;
 do not blindly submit the same version twice.
 
-The workflow does not yet automate GitHub tags/releases or persist version
-bumps upstream. Each new dispatch must select a version newer than the last
-AMO submission as well as package.json. Browser integration and manual
+The workflow does not create GitHub tags or GitHub releases. Version changes
+are saved through the preparation command and normal code review. Each real
+dispatch must match the committed version and use a version not previously
+submitted to AMO. Browser integration and manual
 representative-site checks remain release checks in docs/qa.md; they are not
 claimed to run in this workflow. Selenium-in-CI remains deferred.

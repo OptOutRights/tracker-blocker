@@ -1,8 +1,9 @@
 # Next Firefox update: preparation checklist
 
-Status on October 24, 2026: draft PR #15 is open against the #13 branch.
-GitHub packaging verification passed at commit 4e43e10. Version-bump preview
-coverage was added afterward; check the latest run before requesting review.
+Status on October 26, 2026: draft PR #15 is open against the #13 branch.
+GitHub packaging and version-bump preview verification passed at commit
+170fe4c. Saved-version preparation and matching were added afterward;
+check the latest run before requesting review.
 No extension was submitted to AMO.
 
 ## Already verified
@@ -36,6 +37,8 @@ Archive checks do not replace a complete manual secret/content review.
 - [ ] Confirm the version for the update. Earlier request: 0.1.1;
   latest wording: "new v1". Current local archives are still version 0.1.0
   and are verification outputs, not the next release.
+- [ ] Prepare the agreed version using npm run release:prepare -- VERSION;
+  review and merge both package files before a real release dispatch.
 - [ ] Confirm the existing AMO listing ID and account access, and inspect
   the currently published version to avoid reusing a version number.
 - [ ] Decide whether to complete automation for this update or release
@@ -67,10 +70,9 @@ Archive checks do not replace a complete manual secret/content review.
 
 ## Remaining workflow limitations
 
-- The version bump currently exists only in the runner checkout. It does not
-  update main, create a version tag, or create a GitHub release. The source
-  archive and evidence preserve that runner commit; an upstream version/tag
-  policy still needs choosing before this becomes the normal release process.
+- Real release versions must be saved in the repository through the
+  preparation command and code review. Only practice builds use a temporary
+  version. Creating version tags or GitHub releases is not automated.
 - It checks the requested version against package.json, not AMO's last
   submitted version. The operator must check AMO before running it.
 - Selenium-in-CI remains deferred, consistent with Mustafa's message.
