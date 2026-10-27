@@ -34,10 +34,10 @@ jobs:
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '24.14.0'
           cache: npm
@@ -70,7 +70,7 @@ jobs:
           unzip -q "$EXTENSION_ARCHIVE" -d .output/verified-extension
           node --input-type=module -e "import assert from 'node:assert/strict'; import fs from 'node:fs'; const manifest=JSON.parse(fs.readFileSync('.output/verified-extension/manifest.json')); assert.equal(manifest.version, process.env.RELEASE_VERSION); console.log('Verified packaged version:', manifest.version);"
           node node_modules/web-ext/bin/web-ext.js lint --no-config-discovery --source-dir .output/verified-extension
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: firefox-release-evidence
           path: .output/amo-evidence/
@@ -83,16 +83,16 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '24.14.0'
           cache: npm
       - run: npm install --global npm@11.9.0
       - run: npm ci --no-audit --no-fund
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: firefox-release-evidence
           path: release-evidence
