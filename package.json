@@ -30,6 +30,7 @@
     "verify:easyprivacy": "node scripts/easyprivacy/verify.mjs",
     "verify:amo": "node scripts/release/verify-amo-reproducibility.mjs",
     "verify:amo:container": "node scripts/release/run-amo-container.mjs",
+    "release:prepare": "node scripts/release/prepare-version.mjs",
     "lint:firefox": "npm run build:firefox && web-ext lint --source-dir .output/firefox-mv3",
     "web-ext:firefox": "web-ext run --source-dir .output/firefox-mv3",
     "postinstall": "wxt prepare"

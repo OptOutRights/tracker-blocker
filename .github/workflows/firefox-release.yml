@@ -1,0 +1,115 @@
+name: Firefox release
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/firefox-release.yml'
+      - 'scripts/**'
+      - 'src/**'
+      - 'public/**'
+      - 'vendor/**'
+      - 'package*.json'
+      - 'wxt.config.ts'
+      - '.gitattributes'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version, for example 0.1.1 (must match the committed package version)'
+        required: true
+        type: string
+      publish:
+        description: 'Submit the verified release to the public AMO listing'
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firefox-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24.14.0'
+          cache: npm
+      - run: npm install --global npm@11.9.0
+      - name: Prepare version (PRs use a temporary next-patch preview)
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            RELEASE_VERSION=$(node --input-type=module -e "import fs from 'node:fs'; const p=JSON.parse(fs.readFileSync('package.json')); const parts=p.version.split('.'); parts[2]=String(BigInt(parts[2])+1n); console.log(parts.join('.'));")
+            node scripts/release/prepare-version.mjs "$RELEASE_VERSION"
+            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -am "Preview Firefox $RELEASE_VERSION"
+          fi
+          node scripts/release/check-version.mjs "$RELEASE_VERSION" --committed
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_ENV"
+      - run: npm ci --no-audit --no-fund
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run verify:easyprivacy
+      - name: Build and verify source reproducibility in the reviewer container
+        run: npm run verify:amo:container
+      - name: Verify the archive pair against build evidence
+        id: packages
+        run: node scripts/release/select-evidence.mjs .output/amo-evidence "$RELEASE_VERSION" "$(git rev-parse HEAD)"
+      - name: Unpack the verified extension for validation
+        env:
+          EXTENSION_ARCHIVE: ${{ steps.packages.outputs.extension }}
+        run: |
+          mkdir -p .output/verified-extension
+          unzip -q "$EXTENSION_ARCHIVE" -d .output/verified-extension
+          node --input-type=module -e "import assert from 'node:assert/strict'; import fs from 'node:fs'; const manifest=JSON.parse(fs.readFileSync('.output/verified-extension/manifest.json')); assert.equal(manifest.version, process.env.RELEASE_VERSION); console.log('Verified packaged version:', manifest.version);"
+          node node_modules/web-ext/bin/web-ext.js lint --no-config-discovery --source-dir .output/verified-extension
+      - uses: actions/upload-artifact@v6
+        with:
+          name: firefox-release-evidence
+          path: .output/amo-evidence/
+          if-no-files-found: error
+          retention-days: 30
+
+  submit:
+    needs: verify
+    if: github.event_name == 'workflow_dispatch' && inputs.publish && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24.14.0'
+          cache: npm
+      - run: npm install --global npm@11.9.0
+      - run: npm ci --no-audit --no-fund
+      - uses: actions/download-artifact@v7
+        with:
+          name: firefox-release-evidence
+          path: release-evidence
+      - name: Verify downloaded packages before submission
+        id: packages
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: node scripts/release/select-evidence.mjs release-evidence "$RELEASE_VERSION" "$GITHUB_SHA"
+      - name: Submit the verified package and matching source
+        env:
+          EXTENSION_ARCHIVE: ${{ steps.packages.outputs.extension }}
+          SOURCE_ARCHIVE: ${{ steps.packages.outputs.source }}
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: |
+          test -n "$WEB_EXT_API_KEY" || { echo 'Missing AMO_JWT_ISSUER'; exit 1; }
+          test -n "$WEB_EXT_API_SECRET" || { echo 'Missing AMO_JWT_SECRET'; exit 1; }
+          mkdir verified-extension
+          unzip -q "$EXTENSION_ARCHIVE" -d verified-extension
+          node node_modules/web-ext/bin/web-ext.js sign --no-config-discovery --source-dir verified-extension --channel listed --upload-source-code "$SOURCE_ARCHIVE" --approval-timeout 0

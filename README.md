@@ -29,6 +29,9 @@ against `.output/firefox-mv3` without watching for changes.
 
 ## AMO reviewer build
 
+For the GitHub Actions dry-run and AMO submission procedure, see
+[Firefox release automation](docs/firefox-release.md).
+
 Tracker Blocker uses WXT, Vite, TypeScript, Preact, and Tailwind CSS, so every
 AMO submission includes the matching source archive and this build procedure.
 Mozilla's [default reviewer environment][amo-source] was last checked on
@@ -39,7 +42,8 @@ Mozilla's [default reviewer environment][amo-source] was last checked on
 - 6 vCPUs, 10 GB RAM, and at least 35 GB free disk
 
 The release build is verified in an Ubuntu 24.04.4 ARM64 container with the
-same Node, npm, and 6-vCPU configuration. The local Docker allocation used for
+same Node and npm versions, using up to 6 vCPUs (4 on the GitHub ARM runner).
+The evidence records the available resources. The local Docker allocation used for
 maintainer verification has 7.75 GiB RAM rather than the reviewer's 10 GB; no
 build change or workaround is required, and the reviewer environment has more
 memory available.
