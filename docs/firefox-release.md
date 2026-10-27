@@ -1,19 +1,10 @@
 # Firefox release automation
 
-Local validation on October 24, 2026: clean installation with npm 11.9.0
-passed after repairing optional-dependency lockfile entries; 229 tests,
-TypeScript, Firefox build, and EasyPrivacy byte-identical verification passed.
-Workflow YAML and actionlint 1.7.12 checks passed. Generated JSON files now
-explicitly retain LF endings on Windows. The GitHub ARM64 run at commit
-4e43e10 passed the container rebuild, packaging, extension validation, and
-artifact upload. Its submission job was skipped. The subsequent PR-preview
-change exercises the version bump as well; consult the latest PR check for
-its result. No AMO submission has been tested.
-
-The public AMO API reports version 0.1.0 and the expected extension ID.
-GitHub repository secret names match the workflow. Reading the named release
-environment returned HTTP 404; confirm its existence/access and protections
-before publication. No environment settings or secret values were changed.
+Local validation: 246 tests, TypeScript, and actionlint passed. GitHub Actions
+also verified the ARM64 build, byte-identical source rebuild, package version,
+archive checksums, extension validation, and artifact upload against main.
+Consult the current PR check for the result at its latest revision. Publication
+was skipped in practice runs; actual AMO submission remains untested.
 
 The Firefox release workflow validates pull requests that change relevant code
 or release tooling. PRs temporarily bump the patch version to exercise the
@@ -25,19 +16,20 @@ and evidence as the record of exactly what was submitted.
 
 ## Before enabling publication
 
-Merge PR #13, rebase this release branch onto main, and review/merge the
+PR #13 is merged and this release branch includes it. Review and merge the
 workflow. Confirm the intended version with Mustafa (the earlier request was
 0.1.1). Confirm the existing AMO listing uses trackerblocker@optoutrights.org
 and that the API account can update it. Initial AMO listings may require
 additional listing metadata; this workflow targets updates to an existing
 listing.
 
-Create the GitHub environment `firefox-release`. Configure its reviewers and
-main-branch deployment restriction as desired. Confirm that the existing
-Mozilla secrets are named `AMO_JWT_ISSUER` and `AMO_JWT_SECRET`, or change the
-two workflow references to match their actual names. Secret values are never
-needed locally or in chat. The workflow does not create an approval rule for
-the environment itself.
+The workflow uses the existing repository secrets `AMO_JWT_ISSUER` and
+`AMO_JWT_SECRET`; their names were verified without accessing values. It does
+not require a separately configured GitHub environment or environment approval.
+Publishing requires manual dispatch from main with publish explicitly checked,
+and successful verification first. Anyone with permission to dispatch that
+workflow from main can request publication. Maintainers should approve this
+permission model as part of review. Secret values are not needed locally.
 
 ## Dry run and submission
 

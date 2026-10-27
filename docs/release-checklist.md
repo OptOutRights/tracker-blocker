@@ -1,9 +1,9 @@
 # Next Firefox update: preparation checklist
 
-Status on October 26, 2026: draft PR #15 is open against the #13 branch.
-GitHub packaging and version-bump preview verification passed at commit
-170fe4c. Saved-version preparation and matching were added afterward;
-check the latest run before requesting review.
+Status on October 27, 2026: PR #13 is merged and PR #15 targets main.
+GitHub packaging, source rebuild, saved-version checks, and package-evidence
+verification passed at commit 1c13c93. The optional environment dependency was
+removed afterward; check the latest PR run before requesting review.
 No extension was submitted to AMO.
 
 ## Already verified
@@ -13,7 +13,7 @@ No extension was submitted to AMO.
 - [x] PR #13 targeted Firefox GPC and popup/options checks passed.
 - [x] Release checkout clean installation passed with npm 11.9.0 after
   repairing optional-dependency lockfile entries.
-- [x] Release checkout: 229 unit tests, TypeScript, Firefox build,
+- [x] Release checkout: 246 unit tests, TypeScript, Firefox build,
   EasyPrivacy verification, and extension/source packaging passed.
 - [x] Workflow passed actionlint 1.7.12.
 - [x] Local package inspection: correct extension ID, version agreement,
@@ -33,7 +33,7 @@ Archive checks do not replace a complete manual secret/content review.
 
 ## Before submitting an update
 
-- [ ] Mustafa reviews and merges #13; address any feedback first.
+- [x] Mustafa reviewed and merged #13.
 - [ ] Confirm the version for the update. Earlier request: 0.1.1;
   latest wording: "new v1". Current local archives are still version 0.1.0
   and are verification outputs, not the next release.
@@ -41,14 +41,12 @@ Archive checks do not replace a complete manual secret/content review.
   review and merge both package files before a real release dispatch.
 - [ ] Confirm the existing AMO listing ID and account access, and inspect
   the currently published version to avoid reusing a version number.
-- [ ] Decide whether to complete automation for this update or release
-  manually. Automation is not a technical prerequisite for updating AMO.
-- [ ] Rebase the release work onto merged main and review the final diff.
-- [ ] Confirm the latest PR-preview run passes the version bump and checks
+- [x] Integrate merged main into the release branch and retarget PR #15.
+- [x] Confirm the PR-preview run passes the version bump and checks
   that the packaged manifest contains the preview version.
-- [ ] Confirm the firefox-release environment settings. The YAML names the
-  environment but does not itself create required reviewers or protections.
-  The environment API returned HTTP 404 in this audit (missing or inaccessible).
+- [ ] Review the publishing permission model: existing repository secrets,
+  successful verification, and manual dispatch from main with publish checked.
+  No separate GitHub environment or environment approval is required.
 - [ ] Re-run release checks against the agreed final version and commit,
   including applicable Firefox minimum-version/integration checks and manual
   representative-site checks in docs/qa.md.
